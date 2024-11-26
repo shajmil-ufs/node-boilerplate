@@ -3,26 +3,41 @@ const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
 const helmet = require('helmet');
+const { expressjwt: jwt } = require('express-jwt');  // Updated import
+const globalLimiter = require('./middlewares/rateLimits');
 
 const app = express();
+const PORT = process.env.PORT || 3000;
+const HOST = process.env.HOST || 'localhost'; 
 
-// Middleware
-app.use(helmet()); // Security headers
-app.use(cors()); // Enable CORS
-app.use(morgan('dev')); // Request logging
-app.use(express.json()); // Parse JSON bodies
-app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
+app.use(globalLimiter);
+app.use(helmet());
+app.use(cors());
+app.use(morgan('dev'));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+ 
 
-// Health check route
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date() });
 });
 
-// API Routes
-app.use('/api/users', require('./routes/private/userRoutes'));
-// Add other routes here...
+app.use('/api/auth', require('./routes/public/authRoutes'));
 
-// Error handling middleware
+app.use(jwt({
+  secret: process.env.JWT_SECRET,
+  algorithms: ['HS256']
+}).unless({ 
+  path: [
+    '/health',
+    '/api/auth/login',
+    '/api/auth/test',
+    '/api/public/*'
+  ] 
+}));
+
+app.use('/api/users', require('./routes/private/userRoutes'));
+
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({
@@ -32,7 +47,6 @@ app.use((err, req, res, next) => {
   });
 });
 
-// 404 handler
 app.use((req, res) => {
   res.status(404).json({
     success: false,
@@ -40,24 +54,15 @@ app.use((req, res) => {
   });
 });
 
-const PORT = process.env.PORT || 3000;
-const HOST = process.env.HOST || 'localhost';
-
 app.listen(PORT, HOST, () => {
   console.log(`🚀 Server running on http://${HOST}:${PORT}`);
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
 });
 
-// Handle unhandled promise rejections
 process.on('unhandledRejection', (err) => {
   console.error('Unhandled Promise Rejection:', err);
-  // Prevent the process from crashing in production
-  // process.exit(1);
 });
 
-// Handle uncaught exceptions
 process.on('uncaughtException', (err) => {
   console.error('Uncaught Exception:', err);
-  // Prevent the process from crashing in production
-  // process.exit(1);
 }); 
