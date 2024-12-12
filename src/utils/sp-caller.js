@@ -1,5 +1,5 @@
-var db = require('../config/dbconnection');
-const storedProcedure = require('../helpers/stored-procedure');
+var db = require('../config/database');
+const storedProcedure = require('../utils/stored-procedure');
 
 async function startTransaction() {
     const pool = db.promise();
@@ -7,7 +7,7 @@ async function startTransaction() {
     await connection.beginTransaction();
     return connection;
 } 
-
+ 
 async function executeStoredProcedure(connection, procedureName, parameters) {
     try {
         const result = await new storedProcedure(procedureName, parameters, connection).result();
@@ -24,7 +24,7 @@ async function getmultipleSP(procedureName, parameters) {
     } catch (error) {
         throw error;
     }
-}
+} 
 async function executeTransaction(procedureName, parameters) {
     let connection;
     try {

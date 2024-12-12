@@ -4,13 +4,14 @@ const cors = require('cors');
 const morgan = require('morgan');
 const helmet = require('helmet');
 const { expressjwt: jwt } = require('express-jwt');  // Updated import
-const globalLimiter = require('./middlewares/rateLimits');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const HOST = process.env.HOST || 'localhost'; 
 
-app.use(globalLimiter);
+const swaggerUi = require('swagger-ui-express');
+const swaggerDocument = require('./swagger/swagger-output.json');
+
 app.use(helmet());
 app.use(cors());
 app.use(morgan('dev'));
@@ -18,9 +19,14 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
  
 
-app.get('/health', (req, res) => {
-  res.json({ status: 'OK', timestamp: new Date() });
+// Trust proxy headers
+app.set('trust proxy', true);
+
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
+app.use('/doc', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+
 
 app.use('/api/auth', require('./routes/public/authRoutes'));
 
@@ -50,7 +56,7 @@ app.use((err, req, res, next) => {
 app.use((req, res) => {
   res.status(404).json({
     success: false,
-    message: 'Route not found'
+    message: 'Route not found' 
   });
 });
 

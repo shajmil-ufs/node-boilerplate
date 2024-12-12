@@ -1,9 +1,9 @@
 /**
  * Call a stored procedure using Sequelize query method
- * @author Rahul om <rahulom666@gmail.com>
+ * @author Shajmil Vj  <v.jshejmil@gmail.com>
  */
-
-const db = require("../config/dbconnection");
+ 
+const db = require("../config/database");
 const util = require("util");
 class StoredProcedure {
   constructor(name, params,db1) {
